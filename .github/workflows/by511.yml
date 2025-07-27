@@ -24,7 +24,7 @@ jobs:
           sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 112695A0E562B32A 54404762BBB6E853
           sudo apt update
           sudo apt install libc6 libc6-dev -y
-      - uses: actions/setup-java@v3
+      - uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '8'
@@ -35,7 +35,7 @@ jobs:
           repo init --depth=1 -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_omni.git -b twrp-5.1
           repo sync -c -f --no-tags --no-clone-bundle -j$(nproc --all)
       - name: Setup device
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: 'twrp/device/Xiaoxun'
       - name: Build
@@ -53,24 +53,24 @@ jobs:
           export twrp_version=$(cat bootable/recovery/variables.h | grep "define TW_MAIN_VERSION_STR" | cut -d '"' -f2)
           cp out/target/product/sl8521e_1h10ll_sw761/recovery.img ../twrp-${twrp_version}_0-sl8521e_1h10ll_sw761.img
           cp $(find out -name adf_test | xargs) ../ || true
-          lunch omni_sl8521e_1h10ll_sw763-eng
-          mka -j$(nproc --all) recoveryimage
-          cp out/target/product/sl8521e_1h10ll_sw763/recovery.img ../twrp-${twrp_version}_0-sl8521e_1h10ll_sw763.img
-          lunch omni_sl8521e_1h10ll_sw771-eng
-          mka -j$(nproc --all) recoveryimage
-          cp out/target/product/sl8521e_1h10ll_sw771/recovery.img ../twrp-${twrp_version}_0-sl8521e_1h10ll_sw771.img
+          #lunch omni_sl8521e_1h10ll_sw763-eng
+          #mka -j$(nproc --all) recoveryimage
+          #cp out/target/product/sl8521e_1h10ll_sw763/recovery.img ../twrp-${twrp_version}_0-sl8521e_1h10ll_sw763.img
+          #lunch omni_sl8521e_1h10ll_sw771-eng
+          #mka -j$(nproc --all) recoveryimage
+          #cp out/target/product/sl8521e_1h10ll_sw771/recovery.img ../twrp-${twrp_version}_0-sl8521e_1h10ll_sw771.img
       - uses: actions/upload-artifact@v4
         with:
           name: TWRP Image for MiKids4
           path: 'twrp-*_sw761.img'
-      - uses: actions/upload-artifact@v4
-        with:
-          name: TWRP Image for MiKids4x
-          path: 'twrp-*_sw763.img'
-      - uses: actions/upload-artifact@v4
-        with:
-          name: TWRP Image for MiKids6x
-          path: 'twrp-*_sw771.img'
+          #      - uses: actions/upload-artifact@v4
+          #        with:
+          #          name: TWRP Image for MiKids4x
+          #          path: 'twrp-*_sw763.img'
+          #      - uses: actions/upload-artifact@v4
+          #        with:
+          #          name: TWRP Image for MiKids6x
+          #          path: 'twrp-*_sw771.img'
       - uses: actions/upload-artifact@v4
         with:
           name: adf_test
