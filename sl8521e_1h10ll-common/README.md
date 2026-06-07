@@ -1,4 +1,4 @@
-# TWRP device common tree for Xiaoxun sl8521e\_1h10ll based watch
+# TWRP common device tree for Xiaoxun sl8521e\_1h10ll watch
 
 In `BoardConfig.mk`:
 ```

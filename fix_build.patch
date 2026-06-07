@@ -1,0 +1,48 @@
+first patch is always required, while others are required on modern system (ubuntu 22)
+
+--- a/bootable/recovery/partition.cpp
++++ b/bootable/recovery/partition.cpp
+@@ -1461,7 +1461,7 @@ nullptr not defined in lollipop
+         if (!Symlink_Mount_Point.empty()) {
+             scan_mounted_volumes();
+             const MountedVolume * sml = find_mounted_volume_by_mount_point(Symlink_Mount_Point.c_str());
+-            if (sml != nullptr) {
++            if (sml != NULL) {
+                 return true;
+             }
+         }
+--- a/build/core/definitions.mk
++++ b/build/core/definitions.mk
+@@ -1220,7 +1220,7 @@ sometimes $f is an absolute path, omitting $ldir to workaround
+     filelist=; \
+     for f in `$($(PRIVATE_2ND_ARCH_VAR_PREFIX)HOST_AR) t $(1) | \grep '\.o$$'`; do \
+         $($(PRIVATE_2ND_ARCH_VAR_PREFIX)HOST_AR) p $(1) $$f > $$ldir/$$f; \
+-        filelist="$$filelist $$ldir/$$f"; \
++        filelist="$$filelist $$f"; \
+     done ; \
+     $($(PRIVATE_2ND_ARCH_VAR_PREFIX)HOST_AR) $($(PRIVATE_2ND_ARCH_VAR_PREFIX)HOST_GLOBAL_ARFLAGS) \
+         $(PRIVATE_ARFLAGS) $@ $$filelist
+--- a/external/checkpolicy/checkpolicy.h
++++ b/external/checkpolicy/checkpolicy.h
+@@ -1,20 +1,6 @@ remove duplicated definition
+ #ifndef _CHECKPOLICY_H_
+ #define _CHECKPOLICY_H_
+ 
+-#include <sepol/policydb/ebitmap.h>
+-
+-typedef struct te_assert {
+-	ebitmap_t stypes;
+-	ebitmap_t ttypes;
+-	ebitmap_t tclasses;
+-	int self;
+-	sepol_access_vector_t *avp;
+-	unsigned long line;
+-	struct te_assert *next;
+-} te_assert_t;
+-
+-te_assert_t *te_assertions;
+-
+ extern unsigned int policyvers;
+ 
+ #endif
+

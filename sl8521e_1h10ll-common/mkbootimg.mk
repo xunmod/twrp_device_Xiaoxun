@@ -2,7 +2,7 @@ COMMON_PATH := $(call my-dir)
 
 INSHEAD := $(COMMON_PATH)/insertheader/prebuilt/bin/imgheaderinsert
 SIGNEDIMG ?= $(PRODUCT_OUT)/recovery-sign.img
-INSTALLED_DTIMAGE_TARGET ?= $(PRODUCT_OUT)/dt.img
+INSTALLED_DTIMAGE_TARGET := $(PRODUCT_OUT)/dt.img
 SPRDSIGN := $(COMMON_PATH)/signimage/prebuilt/bin/sprd_sign
 SPRDSIGNCFG := $(COMMON_PATH)/signimage/config
 
