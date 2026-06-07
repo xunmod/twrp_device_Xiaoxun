@@ -18,5 +18,4 @@ COMMON_FOLDER := device/Xiaoxun/sl8521e_1h10ll-common
 
 PRODUCT_COPY_FILES += \
     $(COMMON_FOLDER)/rootdir/init.recovery.sl8521e_1h10ll.rc:root/init.recovery.sl8521e_1h10ll.rc \
-    $(COMMON_FOLDER)/rootdir/init.recovery.usb.rc:root/init.recovery.usb.rc \
-    $(COMMON_FOLDER)/rootdir/ueventd.sl8521e_1h10ll.rc:root/ueventd.sl8521e_1h10ll.rc
+    $(COMMON_FOLDER)/rootdir/init.recovery.usb.rc:root/init.recovery.usb.rc
