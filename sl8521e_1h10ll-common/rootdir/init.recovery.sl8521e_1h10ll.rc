@@ -2,33 +2,6 @@ on init
     symlink /system/vendor /vendor
     symlink /system/etc/bluetooth /etc/bluetooth
 
-# Deal with factory reset
-on post-fs-data
-    # Copy bluetooth things
-    mkdir /data/misc 01771 system misc
-    mkdir /data/misc/bluedroid 0770 bluetooth net_bt_stack
-    mkdir /data/misc/bluetooth 0770 system system
-    copy /system/etc/bluetooth/bt_stack.conf /data/misc/bluedroid/bt_stack.conf
-    chown bluetooth system /data/misc/bluedroid/bt_stack.conf
-    chmod 0640 /data/misc/bluedroid/bt_stack.conf
-
-    # Copy wifi things
-    mkdir /data/misc/wifi 0770 wifi wifi
-    mkdir /data/misc/wifi/sockets 0770 wifi wifi
-    mkdir /data/misc/wifi/wpa_supplicant 0770 wifi wifi
-    mkdir /data/system 0770 system system
-    mkdir /etc/wifi 0770 wifi wifi
-    write /data/misc/wifi/fwpath sta_mode
-    chmod 660 /data/misc/wifi/fwpath
-    chown wifi wifi /data/misc/wifi/fwpath
-    rmdir /data/system/wpa_supplicant
-    mkdir /data/misc/dhcp 0770 dhcp dhcp
-    #to observe dnsmasq.leases file for dhcp information
-    chown dhcp system /data/misc/dhcp
-    setprop wifi.interface wlan0
-    mkdir /data/modem_log 0770 shell system
-    mkdir /data/local/slogmodem 0770 shell system
-
 on boot
     # Allow write u-boot-spl
     write /sys/block/mmcblk0boot0/force_ro 0

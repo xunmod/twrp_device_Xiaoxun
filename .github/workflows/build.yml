@@ -39,8 +39,6 @@ jobs:
           export dt_commit=$(git rev-parse --short HEAD)
           cd $GITHUB_WORKSPACE/twrp
           patch -p1 < device/Xiaoxun/fix_build.patch
-          export USE_CCACHE=1
-          prebuilts/misc/linux-x86/ccache/ccache -M 10G
           source build/envsetup.sh
           lunch omni_sl8521e_1h10ll_sw761-eng
           mka -j$(nproc --all) recoveryimage
@@ -52,7 +50,6 @@ jobs:
           lunch omni_sl8521e_1h10ll_sw771-eng
           mka -j$(nproc --all) recoveryimage
           cp out/target/product/sl8521e_1h10ll_sw771/recovery.img ../twrp-${twrp_version}_${dt_commit}-sl8521e_1h10ll_sw771.img
-          prebuilts/misc/linux-x86/ccache/ccache -s
       - uses: actions/upload-artifact@v5
         with:
           name: TWRP Image for MiKidsWatch 4
