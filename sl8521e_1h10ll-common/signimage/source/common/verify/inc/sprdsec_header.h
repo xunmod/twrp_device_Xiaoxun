@@ -21,31 +21,30 @@ typedef unsigned long int uint64_t;
 #define DWORD unsigned long
 #define  SPRD_RSAPUBKLEN  sizeof(sprd_rsapubkey)
 #pragma pack(1)
-typedef struct {
 
-	uint32_t mMagicNum;	//0x42544844
-	uint32_t mVersion;	//1//
-	uint8_t mPayloadHash[32];	// sha256 hash val
-	uint64_t mImgAddr;	// image loaded address
-	uint32_t mImgSize;	// image size
-	uint8_t reserved[460];	//460 + 13*4 = 512
+typedef struct{
+    uint32_t  mMagicNum;        // "BTHD"=="0x42544844"=="boothead"
+    uint32_t  mVersion;         // 1
+    uint8_t   mPayloadHash[32]; // sha256 hash value
+    uint64_t  mImgAddr;         // image loaded address
+    uint32_t  mImgSize;         // image size
+    uint32_t  is_packed;        // packed image flag 0:false 1:true
+    uint32_t  mFirmwareSize;    // runtime firmware size
+    uint8_t   reserved[452];    // 452 + 15*4 = 512
 } sys_img_header;
+
 #pragma pack()
 #define RSA_KEY_BITS_LEN_MAX 2048
 #define RSA_KEY_BYTE_LEN_MAX (RSA_KEY_BITS_LEN_MAX>>3)
 #define HASH_BYTE_LEN	 32
 #define KEYCERT_HASH_LEN 72
 #define CNTCERT_HASH_LEN 40
-#ifdef SoC_ID
+#ifdef DEBUGMASK_32
 #define PRIMDBG_HASH_LEN 40 //primary_cert->hash...mask...resverd
 #define DEVEDBG_HASH_LEN 36 //developer_cert->debug_mask...socid
-#define DEV_SIGN_LEN     36
-#define PRIMARY_SIGN_LEN HASH_BYTE_LEN + 8
 #else
-#define PRIMDBG_HASH_LEN 40
-#define DEVEDBG_HASH_LEN 12
-#define DEV_SIGN_LEN     12
-#define PRIMARY_SIGN_LEN HASH_BYTE_LEN + 8
+#define PRIMDBG_HASH_LEN 44 //primary_cert->hash...mask...resverd
+#define DEVEDBG_HASH_LEN 40 //developer_cert->debug_mask...socid
 #endif
 #pragma pack(1)
 typedef struct sprdsignedimageheader {
@@ -112,7 +111,11 @@ typedef struct primary_debugcert {
 	sprd_rsapubkey pubkey;	//pubkey for verify this signature
 
 	uint8_t devkey_debug_hash_data[HASH_BYTE_LEN];	//hash of dev_pubkey
+	#ifdef DEBUGMASK_32
 	uint32_t debug_mask;
+	#else
+	uint64_t debug_mask;
+	#endif
 	uint32_t reserved;
 
 	uint8_t devkey_debug_signature[RSA_KEY_BYTE_LEN_MAX];	//signature of  debug_mask & reserved + hash of dev_pubkey
@@ -123,14 +126,12 @@ typedef struct developer_debugcert {
 	uint32_t cert_type;	//debug cert
 
 	sprd_rsapubkey dev_pubkey;	//developer pubkey
-
+	#ifdef DEBUGMASK_32
 	uint32_t debug_mask;
-#ifdef SoC_ID
+	#else
+	uint64_t debug_mask;
+	#endif
     uint8_t soc_id[HASH_BYTE_LEN];
-#else
-	uint32_t uid0;
-	uint32_t uid1;
-#endif
 	uint8_t dev_signature[RSA_KEY_BYTE_LEN_MAX];	//signature hash of uid0~uid1+debug_mask
 } developer_debugcert;
 #pragma pack()

@@ -298,12 +298,7 @@ bool sprd_sbdebug_enable(uint8_t * imgbuf)
 	/*
 	   uid0 is efuse block0   uid1 is efuse block1,if there is no efuse,don't check uid, only set dbg mask
 	 */
-#ifdef SoC_ID
     memcpy(socid,devptr->soc_id,32);
-#else
-	uid0 = devptr->uid0;
-	uid1 = devptr->uid1;
-#endif
 	mask = devptr->debug_mask & primptr->debug_mask;
 
 	//secf("uid0: %x , uid1: %x  mask: %x\n", uid0, uid1, mask);

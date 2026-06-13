@@ -13,20 +13,23 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <libgen.h>
+#include <stdlib.h>
 
 static unsigned char padding[512] = { 0 };
 
 #define NAME_MAX_LEN 2048
-#define KEYCERT_VERSION 1
-#define CONTENTCERT_VERSION 1
 
 //used to parse new packed modem image(modem bin+symbol)
-#define MODEM_MAGIC        "SCI1"
-#define MODEM_HDR_SIZE     12
-#define MODEM_IMG_HDR      0x1
-#define MODEM_LAST_HDR     0x100
-#define MODEM_SHA1_HDR     0x400
-#define MODEM_SHA1_SIZE    20
+#define MODEM_MAGIC           "SCI1"
+#define MODEM_HDR_SIZE        12  // size of a block
+#define SCI_TYPE_MODEM_BIN    1
+#define SCI_TYPE_PARSING_LIB  2
+#define MODEM_LAST_HDR        0x100
+#define MODEM_SHA1_HDR        0x400
+#define MODEM_SHA1_SIZE       20
+
+#define Trusted_Firmware 1
+#define Non_Trusted_Firmware 0
 
 typedef struct {
 	unsigned int type_flags;
@@ -34,6 +37,69 @@ typedef struct {
 	unsigned int length;
 } data_block_header_t;
 //end modem parse vars
+
+#define TRUSTED_VERSION     "tver="
+#define NON_TRUSTED_VERSION "ntver="
+#define TRUSTED_VERSION_MAX 32
+uint32_t  s_tver_arr[TRUSTED_VERSION_MAX + 1] =
+                           {0,
+                            0x1,        0x3,        0x7,        0xf,
+                            0x1f,       0x3f,       0x7f,       0xff,
+                            0x1ff,      0x3ff,      0x7ff,      0xfff,
+                            0x1fff,     0x3fff,     0x7fff,     0xffff,
+                            0x1ffff,    0x3ffff,    0x7ffff,    0xfffff,
+                            0x1fffff,   0x3fffff,   0x7fffff,   0xffffff,
+                            0x1ffffff,  0x3ffffff,  0x7ffffff,  0xfffffff,
+                            0x1fffffff, 0x3fffffff, 0x7fffffff, 0xffffffff};
+static void getversion(char  *fn, uint32_t  *tver, uint32_t  *ntver)
+{
+    char    buf[64] = {0};
+    char    name[NAME_MAX_LEN] = {0};
+    int     fd = 0, ret = 0, count = 0;
+    char   *value = NULL;
+    uint32_t trust_ver = 0;
+
+    if (NULL == fn || NULL == tver || NULL == ntver) {
+        printf("input paramater wrong!\n");
+        return;
+    }
+    if (strlen(fn) > NAME_MAX_LEN) {
+        printf("fn is invalid!\n");
+        return;
+    }
+    strcpy(name, fn);
+    if (name[strlen(fn) - 1] != '/') {
+        strcat(name,"/");
+    }
+    strcat(name, "version.cfg");
+    printf("getversion, name: %s\n", name);
+    fd = open(name, O_RDONLY);
+    if (fd < 0) {
+        printf("open version file failed!\n");
+        return;
+    }
+    memset(buf, 0, sizeof(buf));
+    ret = read(fd, buf, sizeof(buf));
+    if (ret < 0) {
+        printf("read version file failed!\n");
+        goto error;
+    }
+    value = buf;
+    strsep(&value, "=");
+    trust_ver = atoi(value);
+    if (trust_ver > TRUSTED_VERSION_MAX) {
+        trust_ver = TRUSTED_VERSION_MAX;
+    }
+    printf("trust_ver = %d \n", trust_ver);
+    *tver = s_tver_arr[trust_ver];
+
+    strsep(&value, "=");
+    *ntver = atoi(value);
+    printf("tver = 0x%x ntver = %d\n", *tver, *ntver);
+error:
+    close(fd);
+    return;
+}
 
 static void *load_file(const char *fn, unsigned *_sz)
 {
@@ -102,42 +168,61 @@ static void get_modem_info(unsigned char *data, unsigned int *code_offset, unsig
 	read_len = sizeof(hdr_buf);
 	memcpy(hdr_buf, data, read_len);
 
-		do {
-			if(!hdr_offset) {
-				hdr_ptr = (data_block_header_t*)hdr_buf + 1;
-				hdr_offset = MODEM_HDR_SIZE;
-			} else {
-				hdr_ptr = (data_block_header_t*)hdr_buf;
-			}
+    do {
+      if (!hdr_offset) {
+        if (memcmp(hdr_buf, MODEM_MAGIC, sizeof(MODEM_MAGIC))) {
+          result = 2;
+          printf("old image format!\n");
+          break;
+        }
 
-			while(!(hdr_ptr->type_flags & MODEM_IMG_HDR)) {
-				hdr_ptr ++;
-				hdr_offset += MODEM_HDR_SIZE;
-				if(read_len == ((unsigned char*)hdr_ptr - hdr_buf)) {
-					result = 1;
-					break;
-				}
+        hdr_ptr = (data_block_header_t *)hdr_buf + 1;
+        hdr_offset = MODEM_HDR_SIZE;
+      } else {
+        hdr_ptr = (data_block_header_t *)hdr_buf;
+      }
 
-				if(hdr_ptr->type_flags & MODEM_LAST_HDR) {
-					result = 2;
-					printf("no modem image, error image header!!!\n");
-					break;
-				}
-			};
+      data_block_header_t* endp
+          = (data_block_header_t*)(hdr_buf + sizeof hdr_buf);
+      int found = 0;
+      while (hdr_ptr < endp) {
+        uint32_t type = (hdr_ptr->type_flags & 0xff);
+        if (SCI_TYPE_MODEM_BIN == type) {
+          found = 1;
+          break;
+        }
 
-			if(result != 1) {
-				break;
-			}
+        /*  There is a bug (622472) in MODEM image generator.
+         *  To recognize wrong SCI headers and correct SCI headers,
+         *  we devise the workaround.
+         *  When the MODEM image generator is fixed, remove #if 0.
+         */
+#if 0
+        if (hdr_ptr->type_flags & MODEM_LAST_HDR) {
+          result = 2;
+          MODEM_LOGE("no modem image, error image header!!!\n");
+          break;
+        }
+#endif
+        hdr_ptr++;
+      }
+      if (!found) {
+        result = 2;
+        printf("no MODEM exe found in SCI header!");
+      }
 
-		} while(1);
+      if (result != 1) {
+        break;
+      }
+    } while (1);
 
-		if(!result) {
-			offset = hdr_ptr->offset;
-			if(hdr_ptr->type_flags & MODEM_SHA1_HDR) {
-				offset += MODEM_SHA1_SIZE;
-			}
-			length = hdr_ptr->length;
-		}
+    if (!result) {
+      offset = hdr_ptr->offset;
+      if (hdr_ptr->type_flags & MODEM_SHA1_HDR) {
+        offset += MODEM_SHA1_SIZE;
+      }
+      length = hdr_ptr->length;
+    }
 
 	*code_offset = offset;
 	*code_len = length;
@@ -177,7 +262,7 @@ int sprd_signimg(char *img, char *key_path)
 {
 
 	int i, j;
-	int fd;
+	int fd = 0;
 	int img_len;
 	char *key[6] = { 0 };
 	unsigned pagesize = 512;
@@ -189,6 +274,8 @@ int sprd_signimg(char *img, char *key_path)
 
 	unsigned int modem_offset = 0;
 	unsigned int modem_len = 0;
+    sys_img_header *p_header;
+    uint32_t tversion = 0, ntversion = 0;
 
 	output_data = img;
 	char *basec = strdup(img);
@@ -214,6 +301,8 @@ int sprd_signimg(char *img, char *key_path)
 	strcat(key[4], "rsa2048_1.pem");
 	strcat(key[5], "rsa2048_2.pem");
 
+    getversion(key_path, &tversion, &ntversion);
+
 	sprdsignedimageheader sign_hdr;
 	sprd_keycert keycert;
 	sprd_contentcert contentcert;
@@ -230,16 +319,20 @@ int sprd_signimg(char *img, char *key_path)
 
 	payload_addr = input_data + sizeof(sys_img_header);
 
-	if (is_packed_modem_image(payload_addr)) {
-		printf("new packed modem image is found!\n");
-		get_modem_info(payload_addr, &modem_offset, &modem_len);
-		payload_addr += modem_offset;
-		sign_hdr.payload_size = modem_len;
-		printf("modem offset is %d \n", modem_offset);
-		printf("modem size is %d \n", modem_len);
-	} else {
-		sign_hdr.payload_size = img_len - sizeof(sys_img_header);
-	}
+    if (is_packed_modem_image(payload_addr)) {
+        printf("new packed modem image is found!\n");
+        get_modem_info(payload_addr, &modem_offset, &modem_len);
+        payload_addr += modem_offset;
+        sign_hdr.payload_size = modem_len;
+        printf("modem offset is %d \n", modem_offset);
+        printf("modem size is %d \n", modem_len);
+        printf("update header imgsize \n");
+        p_header = (sys_img_header *)input_data;
+        p_header->is_packed     = 1;
+        p_header->mFirmwareSize = modem_len;
+    } else {
+        sign_hdr.payload_size = img_len - sizeof(sys_img_header);
+    }
 	sign_hdr.payload_offset = sizeof(sys_img_header);
 	sign_hdr.cert_offset = img_len + sizeof(sprdsignedimageheader);
 
@@ -258,8 +351,8 @@ int sprd_signimg(char *img, char *key_path)
 	    || (0 == memcmp("u-boot-spl-16k-sign.bin", img_name, strlen("u-boot-spl-16k-sign.bin")))) {
 		printf("sign fdl1/spl: %s\n", img_name);
 		keycert.certtype = CERTTYPE_KEY;
-		keycert.version = 0x1;
-		keycert.type = 0x1;
+		keycert.version = tversion;
+		keycert.type = Trusted_Firmware;
 		sign_hdr.cert_size = sizeof(sprd_keycert);
 		getpubkeyfrmPEM(&keycert.pubkey, key[0]);	/*pubk0 */
 		getpubkeyfrmPEM(&nextpubk, key[1]);	/*pubk1 */
@@ -275,11 +368,13 @@ int sprd_signimg(char *img, char *key_path)
 			goto fail;
 
 	} else if ((0 == memcmp("fdl2-sign.bin", img_name, strlen("fdl2-sign.bin")))
-		   || (0 == memcmp("u-boot-sign.bin", img_name, strlen("u-boot-sign.bin"))) \
+		   || (0 == memcmp("u-boot-sign.bin", img_name, strlen("u-boot-sign.bin")))
+                   || (0 == memcmp("u-boot_autopoweron-sign.bin", img_name, strlen("u-boot_autopoweron-sign.bin")))
            || (0 == memcmp("u-boot-dtb-sign.bin",img_name,strlen("u-boot-dtb-sign.bin")))) {
 		printf("sign fdl2/uboot: %s\n", img_name);
 		keycert.certtype = CERTTYPE_KEY;
-		keycert.version = KEYCERT_VERSION;
+		keycert.version = tversion;
+		keycert.type = Trusted_Firmware;
 		printf("keycert version is: %d\n", keycert.version);
 		sign_hdr.cert_size = sizeof(sprd_keycert);
 		getpubkeyfrmPEM(&keycert.pubkey, key[1]);	/*pubk1 */
@@ -305,6 +400,8 @@ int sprd_signimg(char *img, char *key_path)
             || (0 == memcmp("mvconfig-sign.bin",img_name,strlen("mvconfig-sign.bin")))) {
 		printf("sign tos/sml: %s\n", img_name);
 		contentcert.certtype = CERTTYPE_CONTENT;
+		contentcert.version = tversion;
+		contentcert.type = Trusted_Firmware;
 		sign_hdr.cert_size = sizeof(sprd_contentcert);
 		getpubkeyfrmPEM(&contentcert.pubkey, key[1]);	/*pubk1 */
 		printf("current pubk is: %s\n", key[1]);
@@ -317,7 +414,8 @@ int sprd_signimg(char *img, char *key_path)
 	} else {
 		printf("sign boot/modem: %s\n", img_name);
 		contentcert.certtype = CERTTYPE_CONTENT;
-		contentcert.version = CONTENTCERT_VERSION;
+		contentcert.version = ntversion;
+		contentcert.type = Non_Trusted_Firmware;
 		printf("contentcert version is: %d\n", contentcert.version);
 		sign_hdr.cert_size = sizeof(sprd_contentcert);
 		getpubkeyfrmPEM(&contentcert.pubkey, key[2]);	/*pubk2 */

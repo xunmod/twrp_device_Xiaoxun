@@ -1,10 +1,10 @@
 COMMON_PATH := $(call my-dir)
 
-INSHEAD := $(COMMON_PATH)/insertheader/prebuilt/bin/imgheaderinsert
-SIGNEDIMG ?= $(PRODUCT_OUT)/recovery-sign.img
-INSTALLED_DTIMAGE_TARGET := $(PRODUCT_OUT)/dt.img
-SPRDSIGN := $(COMMON_PATH)/signimage/prebuilt/bin/sprd_sign
+INSHEAD := $(HOST_OUT_EXECUTABLES)/imgheaderinsert$(HOST_EXECUTABLE_SUFFIX)
+SPRDSIGN := $(HOST_OUT_EXECUTABLES)/sprd_sign$(HOST_EXECUTABLE_SUFFIX)
 SPRDSIGNCFG := $(COMMON_PATH)/signimage/config
+INSTALLED_DTIMAGE_TARGET := $(PRODUCT_OUT)/dt.img
+SIGNEDIMG := $(PRODUCT_OUT)/recovery-sign.img
 
 $(INSTALLED_RECOVERYIMAGE_TARGET): $(MKBOOTIMG) $(INSTALLED_DTIMAGE_TARGET) \
 		$(recovery_ramdisk) \
