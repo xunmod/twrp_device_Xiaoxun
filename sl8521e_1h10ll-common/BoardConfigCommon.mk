@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-LOCAL_PATH := device/Xiaoxun/sl8521e_1h10ll-common
+COMMON_PATH := device/Xiaoxun/sl8521e_1h10ll-common
 
 TARGET_ARCH := arm
 TARGET_CPU_ABI := armeabi-v7a
@@ -27,7 +27,7 @@ ARCH_ARM_HAVE_TLS_REGISTER := true
 TARGET_BOOTLOADER_BOARD_NAME := sl8521e_1h10ll 
 TARGET_NO_BOOTLOADER := true
 
-BOARD_CUSTOM_BOOTIMG_MK := $(LOCAL_PATH)/mkbootimg.mk
+BOARD_CUSTOM_BOOTIMG_MK := $(COMMON_PATH)/mkbootimg.mk
 BOARD_KERNEL_CMDLINE := console=ttyS1,115200n8 androidboot.selinux=permissive
 BOARD_KERNEL_BASE := 0x00000000
 BOARD_KERNEL_PAGESIZE := 2048
@@ -37,7 +37,7 @@ BOARD_MKBOOTIMG_ARGS := \
 	--second_offset 0x00f00000 \
 	--tags_offset 0x00000100
 
-TARGET_RECOVERY_FSTAB := $(LOCAL_PATH)/twrp.fstab
+TARGET_RECOVERY_FSTAB := $(COMMON_PATH)/twrp.fstab
 RECOVERY_SDCARD_ON_DATA := true
 TARGET_USE_CUSTOM_LUN_FILE_PATH := /config/usb_gadget/g1/functions/mass_storage.gs6/lun.0/file
 # Seem 4X uses another path
@@ -62,5 +62,5 @@ TARGET_USES_LOGD := true
 
 # SELinux
 TWHAVE_SELINUX := true
-BOARD_SEPOLICY_DIRS += $(LOCAL_PATH)/sepolicy
+BOARD_SEPOLICY_DIRS += $(COMMON_PATH)/sepolicy
 BOARD_SEPOLICY_UNION += unlabeled.te
