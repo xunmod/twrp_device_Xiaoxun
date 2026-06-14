@@ -1,6 +1,7 @@
 LOCAL_PATH:= $(call my-dir)
 include $(CLEAR_VARS)
 
+$(warning imgheaderinsert)
 LOCAL_MODULE := imgheaderinsert
 
 LOCAL_SRC_FILES := imgheaderinsert.c

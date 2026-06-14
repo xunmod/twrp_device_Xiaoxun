@@ -1,6 +1,6 @@
 LOCAL_PATH:=$(call my-dir)
     include $(CLEAR_VARS)
-
+$(warning sprdsign)
 mysrc_path:=$(LOCAL_PATH)/../../common
 
 file_list:=$(wildcard $(mysrc_path)/pk1/src/*.c)
