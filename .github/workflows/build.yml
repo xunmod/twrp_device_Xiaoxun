@@ -44,21 +44,27 @@ jobs:
           mka -j$(nproc --all) recoveryimage
           export twrp_version=$(cat bootable/recovery/variables.h | grep "define TW_MAIN_VERSION_STR" | cut -d '"' -f2)
           cp out/target/product/sl8521e_1h10ll_sw761/recovery.img ../twrp-${twrp_version}_${dt_commit}-sl8521e_1h10ll_sw761.img
-          lunch omni_sl8521e_1h10ll_sw763-eng
-          mka -j$(nproc --all) recoveryimage
-          cp out/target/product/sl8521e_1h10ll_sw763/recovery.img ../twrp-${twrp_version}_${dt_commit}-sl8521e_1h10ll_sw763.img
-          lunch omni_sl8521e_1h10ll_sw771-eng
-          mka -j$(nproc --all) recoveryimage
-          cp out/target/product/sl8521e_1h10ll_sw771/recovery.img ../twrp-${twrp_version}_${dt_commit}-sl8521e_1h10ll_sw771.img
+          mkdir ../signutils
+          cp $(find out/host -name sprd_sign) $(find out/host -name imgheaderinsert) ../signutils/
+          #lunch omni_sl8521e_1h10ll_sw763-eng
+          #mka -j$(nproc --all) recoveryimage
+          #cp out/target/product/sl8521e_1h10ll_sw763/recovery.img ../twrp-${twrp_version}_${dt_commit}-sl8521e_1h10ll_sw763.img
+          #lunch omni_sl8521e_1h10ll_sw771-eng
+          #mka -j$(nproc --all) recoveryimage
+          #cp out/target/product/sl8521e_1h10ll_sw771/recovery.img ../twrp-${twrp_version}_${dt_commit}-sl8521e_1h10ll_sw771.img
       - uses: actions/upload-artifact@v5
         with:
           name: TWRP Image for MiKidsWatch 4
           path: 'twrp-*_sw761.img'
       - uses: actions/upload-artifact@v5
         with:
-          name: TWRP Image for MiKidsWatch 4x
-          path: 'twrp-*_sw763.img'
-      - uses: actions/upload-artifact@v5
-        with:
-          name: TWRP Image for MiKidsWatch 6x
-          path: 'twrp-*_sw771.img'
+          name: sign utils
+          path: 'signutils'
+      #- uses: actions/upload-artifact@v5
+      #  with:
+      #    name: TWRP Image for MiKidsWatch 4x
+      #    path: 'twrp-*_sw763.img'
+      #- uses: actions/upload-artifact@v5
+      #  with:
+      #    name: TWRP Image for MiKidsWatch 6x
+      #    path: 'twrp-*_sw771.img'
