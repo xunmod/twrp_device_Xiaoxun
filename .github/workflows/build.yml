@@ -45,7 +45,7 @@ jobs:
           export twrp_version=$(cat bootable/recovery/variables.h | grep "define TW_MAIN_VERSION_STR" | cut -d '"' -f2)
           cp out/target/product/sl8521e_1h10ll_sw761/recovery.img ../twrp-${twrp_version}_${dt_commit}-sl8521e_1h10ll_sw761.img
           mkdir ../signutils
-          cp $(find out/host -name sprd_sign) $(find out/host -name imgheaderinsert) ../signutils/
+          cp out/host/linux-x86/bin/sprd_sign out/host/linux-x86/bin/imgheaderinsert ../signutils/
           #lunch omni_sl8521e_1h10ll_sw763-eng
           #mka -j$(nproc --all) recoveryimage
           #cp out/target/product/sl8521e_1h10ll_sw763/recovery.img ../twrp-${twrp_version}_${dt_commit}-sl8521e_1h10ll_sw763.img
